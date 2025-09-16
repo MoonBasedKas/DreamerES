@@ -1,4 +1,4 @@
-struct Registers
+struct CpuRegisters
 {
     unsigned short PC; // Program counter
     unsigned short SP; // stack pointer

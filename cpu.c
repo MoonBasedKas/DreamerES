@@ -1,4 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "cpu.h"
+
+struct CpuRegisters *CpuRegs = NULL;
+
+struct CpuRegisters *initCpuReg()
+{
+    return calloc(0, sizeof(struct CpuRegisters));
+}
 
 int execInstruction(int op)
 {
@@ -37,9 +46,17 @@ int execInstruction(int op)
     // INC - Increment memory
     // DEC - Decrement memory
     // INX - Increment X
+    case 0xE8:
+        break;
     // DEX - Decrement X
+    case 0xCA:
+        break;
     // INY - Increment Y
+    case 0xC8:
+        break;
     // DEY - Decrement Y
+    case 0x88:
+        break;
     // ASL - arithmetic shift left
     // LSR - Logical Shift Right
     // ROL - Rotate Left
