@@ -1,21 +1,109 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "cpu.h"
+#include "../cpu.h"
 
 struct CpuRegisters *CpuRegs = NULL;
+unsigned int cycles = 0;
+byte CpuRom[ROMSize];
+byte CpuRam[RAMSize];
+byte RomHeader[RomHeaderSize];
 
 struct CpuRegisters *initCpuReg()
 {
-    return calloc(0, sizeof(struct CpuRegisters));
+    struct CpuRegisters *new = calloc(0, sizeof(struct CpuRegisters));
+    new->SP = StackStart;
+    return new;
 }
 
-int execInstruction(int op)
+/**
+ * @brief Reads a provided rom
+ *
+ * @param loc, file we are reading.
+ */
+void RomRead(char *loc)
 {
+    FILE *fp = fopen(loc, "rb");
+    fread(RomHeader, 1, ftell(fp), fp);
+    fread(CpuRom, 1, ftell(fp) - RomHeaderSize, fp);
+    CpuRegs->PC = ((ushort)CpuRead(0xFFFD) * 0x100) + (ushort)CpuRead(0xFFFC);
+    fclose(fp);
+}
+
+void Reset(char *loc)
+{
+    FILE *fp = fopen(loc, "rb");
+    fread(RomHeader, 1, ftell(fp), fp);
+    fread(CpuRom, 1, ftell(fp) - RomHeaderSize, fp);
+
+    CpuRegs->PC = ((ushort)CpuRead(0xFFFD) * 0x100) + (ushort)CpuRead(0xFFFC);
+    fclose(fp);
+}
+
+/**
+ * @brief Performs a read from the CpuRom
+ *
+ * @param address
+ * @return char
+ */
+byte CpuRead(ushort address)
+{
+    if (address < RAMSize)
+    {
+        return CpuRam[address];
+    }
+    else if (address < RAMMirrorTwo)
+    {
+        return CpuRam[address - RAMMirrorOne];
+    }
+    else if (address < RAMMIrrorThree)
+    {
+        return CpuRam[address - RAMMirrorTwo];
+    }
+    else if (address < RAMMirrorLimit)
+    {
+        return CpuRam[address - RAMMIrrorThree];
+    }
+    return CpuRom[address];
+}
+
+int CpuWrite(ushort address, byte value)
+{
+    if (address < RAMSize)
+    {
+        CpuRam[address] = value;
+    }
+    else if (address < RAMMirrorTwo)
+    {
+        CpuRam[address - RAMMirrorOne] = value;
+    }
+    else if (address < RAMMIrrorThree)
+    {
+        CpuRam[address - RAMMirrorTwo] = value;
+    }
+    else if (address < RAMMirrorLimit)
+    {
+        CpuRam[address - RAMMIrrorThree] = value;
+    }
+
+    CpuRom[address] = value;
+    return 0;
+}
+
+int execInstruction()
+{
+    byte op = CpuRead(CpuRegs->PC);
+    // Low/high bytes of each opcode.
+    byte low = 0;
+    byte high = 0;
     switch (op)
     {
     // LDA - Load A
     case 0xA9: // Immediate
-    case 0xA5: // Zero PAge
+        CpuRegs->A = CpuRead(CpuRegs->PC);
+        CpuRegs->PC++;
+        cycles += 2;
+        break;
+    case 0xA5: // Zero Page
     case 0xB5: // Zero page, X
     case 0xAD: // Absolute
     case 0xBD: // Absolute, X
@@ -64,18 +152,22 @@ int execInstruction(int op)
 
     // TAX - transfer a to x
     case 0xAA:
+        CpuRegs->X = CpuRegs->A;
         break;
 
     // TXA - transfer x to a
     case 0x8A:
+        CpuRegs->A = CpuRegs->X;
         break;
 
     // TAY - transfer a to y
     case 0xA8:
+        CpuRegs->Y = CpuRegs->A;
         break;
 
     // TYA - Transfer y to a
     case 0x98:
+        CpuRegs->A = CpuRegs->Y;
         break;
 
     // ADC - Add with carry
@@ -116,18 +208,22 @@ int execInstruction(int op)
 
     // INX - Increment X
     case 0xE8:
+        CpuRegs->X++;
         break;
 
     // DEX - Decrement X
     case 0xCA:
+        CpuRegs->X--;
         break;
 
     // INY - Increment Y
     case 0xC8:
+        CpuRegs->Y++;
         break;
 
     // DEY - Decrement Y
     case 0x88:
+        CpuRegs->Y--;
         break;
 
     // ASL - arithmetic shift left
@@ -294,29 +390,40 @@ int execInstruction(int op)
     // --- Flags ---
     // CLC - clears the carry flag
     case 0x18:
+        if (CpuRegs->status & Carry)
+            CpuRegs->status ^= Carry;
         break;
     // SEC - Set carry
     case 0x38:
+        CpuRegs->status |= Carry;
         break;
 
     // CLI - Clear interupt disable
     case 0x58:
+        if (CpuRegs->status & InteruptDisable)
+            CpuRegs->status ^= InteruptDisable;
         break;
 
     // SEI - Set interupt disable
     case 0x78:
+        CpuRegs->status |= InteruptDisable;
         break;
 
     // CLD - Clears the decimal flag.
     case 0xD8:
+        if (CpuRegs->status & Decimal)
+            CpuRegs->status ^= Decimal;
         break;
 
     // SED - Set decimal
     case 0xF8:
+        CpuRegs->status |= Decimal;
         break;
 
     // CLV - clear overflow
     case 0xB8:
+        if (CpuRegs->status & Overflow)
+            CpuRegs->status ^= Overflow;
         break;
 
     // Unofficial op code, treat as No op.
