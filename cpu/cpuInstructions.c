@@ -46,24 +46,23 @@ int execInstruction()
     case 0x84: // Zero Page
     case 0x94: // Zero page, X
     case 0x8c: // Absolute
+        STY(op, low, high, temp);
         break;
 
     /// @brief LDX - Load X
     case 0xA2: // Immediate
-        CpuRegs->X = CpuRead(CpuRegs->PC);
-        CpuRegs->PC++;
-        cycles += tempValue;
-        break;
     case 0xA6: // Zero PAge
     case 0xB6: // Zero page, Y
     case 0xAE: // Absolute
     case 0xBE: // Absolute, Y
+        LDX(op, low, high, temp);
         break;
 
     /// @brief STX - Store X
     case 0x86: // Zero PAge
     case 0x96: // Zero page, Y
     case 0x8E: // Absolute
+        STX(op, low, high, temp);
         break;
 
     /// @brief TAX - transfer a to x
