@@ -44,10 +44,14 @@ struct CpuRegisters
     // Negative, Overflow, N/A, N/A, Decimal, Interrupt Disable, Zero, Carry
 };
 
+// Basic Cpu functions
 void RomRead(char *loc);
 void Reset(char *loc);
 byte CpuRead(ushort address);
 int CpuWrite(ushort address, byte value);
+ushort readAddress();
+
+// Instruction specific functions.
 int execInstruction();
 
 // Evil global variables.

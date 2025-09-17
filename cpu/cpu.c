@@ -87,3 +87,15 @@ int CpuWrite(ushort address, byte value)
     CpuRom[address] = value;
     return 0;
 }
+
+/**
+ * @brief Generates an address with the current PC
+ *
+ * @return ushort
+ */
+ushort readAddress()
+{
+    byte low = CpuRead(CpuRegs->PC++);
+    byte high = CpuRead(CpuRegs->PC);
+    return ((ushort)high * 0x100) + (ushort)low;
+}

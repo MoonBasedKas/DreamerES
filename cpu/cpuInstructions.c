@@ -12,87 +12,34 @@ int execInstruction()
     {
     /// @brief LDA - Load A
     case 0xA9: // Immediate
-        CpuRegs->A = CpuRead(CpuRegs->PC);
-        CpuRegs->PC++;
-        cycles += 2;
-        break;
-
     case 0xB5: // Zero page, X
-        temp = CpuRegs->X;
-        cycles += tempValue;
     case 0xA5: // Zero Page
-        temp += CpuRead(CpuRegs->PC);
-        temp %= byteLimit;
-        CpuRegs->A = CpuRead(temp);
-        CpuRegs->PC++;
-        cycles += tempValue; // Base cycles added.
-        break;
     case 0xBD: // Absolute, X
     case 0xB9: // Absolute, Y
-        if (op == 0xBD)
-        {
-            temp = CpuRegs->X;
-        }
-        else
-        {
-            temp = CpuRegs->Y;
-        }
-        cycles += tempValue;
     case 0xAD: // Absolute
-        low = CpuRead(CpuRegs->PC++);
-        high = CpuRead(CpuRegs->PC++);
-        temp += ((ushort)high * 0x100) + (ushort)low;
-        CpuRegs->A = CpuRead(temp);
-        cycles += tempValue;
-        break;
     case 0xA1: // (Indirect, X)
     case 0xB1: // (Inderect), Y
+        LDA(op, low, high, temp);
         break;
 
     /// @brief STA - Store A
     case 0x95: // Zero page, X
-        temp += CpuRegs->X;
-        cycles += tempValue;
     case 0x85: // Zero Page
-        temp += CpuRead(CpuRegs->PC);
-        temp %= byteLimit;
-        CpuWrite(temp, CpuRegs->A);
-        CpuRegs->PC++;
-        cycles += tempValue; // Base cycles added.
-        break;
     case 0x9D: // Absolute, X
     case 0x99: // Absolute, Y
-        if (op == 0xBD)
-        {
-            temp = CpuRegs->X;
-        }
-        else
-        {
-            temp = CpuRegs->Y;
-        }
-        cycles += tempValue;
     case 0x8D: // Absolute
-        low = CpuRead(CpuRegs->PC++);
-        high = CpuRead(CpuRegs->PC);
-        temp += ((ushort)high * 0x100) + (ushort)low;
-        CpuWrite(temp, CpuRegs->A);
-        cycles += tempValue;
     case 0x81: // (Indirect, X)
     case 0x91: // (Inderect), Y
+        STA(op, low, high, temp);
         break;
 
     /// @brief LDY - Load Y
     case 0xA0: // Immediate
-        CpuRegs->Y = CpuRead(CpuRegs->PC);
-        CpuRegs->PC++;
-        cycles += tempValue;
-        break;
     case 0xB4: // Zero page, X
     case 0xA4: // Zero PAge
-
     case 0xBC: // Absolute, X
     case 0xAC: // Absolute
-
+        LDY(op, low, high, temp);
         break;
 
     /// @brief STY - Store Y
@@ -328,6 +275,10 @@ int execInstruction()
 
     /// @brief JSR - Jump to subroutine
     case 0x20:
+        // TODO Push return address onto stack.
+        temp += readAddress();
+        CpuRegs->PC = CpuRead(temp);
+        cycles += tempValue;
         break;
     /// @brief RTS - Return from subroutine
     case 0x60:
@@ -416,5 +367,219 @@ int execInstruction()
         break;
     }
 
+    return 0;
+}
+
+/**
+ * @brief Performs the LDA operation and its various addressing modes. Load A
+ *
+ * @param op
+ * @return int
+ */
+int LDA(byte op, byte low, byte high, ushort temp)
+{
+
+    switch (op)
+    {
+    case 0xA9: // Immediate
+        CpuRegs->A = CpuRead(CpuRegs->PC);
+        CpuRegs->PC++;
+        cycles += 2;
+        break;
+
+    case 0xB5: // Zero page, X
+        temp = CpuRegs->X;
+        cycles += tempValue;
+    case 0xA5: // Zero Page
+        temp += CpuRead(CpuRegs->PC);
+        temp %= byteLimit;
+        CpuRegs->A = CpuRead(temp);
+        CpuRegs->PC++;
+        cycles += tempValue; // Base cycles added.
+        break;
+    case 0xBD: // Absolute, X
+    case 0xB9: // Absolute, Y
+        if (op == 0xBD)
+        {
+            temp = CpuRegs->X;
+        }
+        else
+        {
+            temp = CpuRegs->Y;
+        }
+        cycles += tempValue;
+    case 0xAD: // Absolute
+
+        temp += readAddress();
+        CpuRegs->A = CpuRead(temp);
+        cycles += tempValue;
+        break;
+    case 0xA1: // (Indirect, X)
+    case 0xB1: // (Inderect), Y
+        break;
+    }
+}
+
+/**
+ * @brief Performs the STA operation Store A
+ *
+ * @param op
+ * @param low temp var
+ * @param high temp var
+ * @param temp temp var
+ * @return int
+ */
+int STA(byte op, byte low, byte high, ushort temp)
+{
+    switch (op)
+    {
+    case 0x95: // Zero page, X
+        temp += CpuRegs->X;
+        cycles += tempValue;
+    case 0x85: // Zero Page
+        temp += CpuRead(CpuRegs->PC);
+        temp %= byteLimit;
+        CpuWrite(temp, CpuRegs->A);
+        CpuRegs->PC++;
+        cycles += tempValue; // Base cycles added.
+        break;
+    case 0x9D: // Absolute, X
+    case 0x99: // Absolute, Y
+        if (op == 0xBD)
+        {
+            temp = CpuRegs->X;
+        }
+        else
+        {
+            temp = CpuRegs->Y;
+        }
+        cycles += tempValue;
+    case 0x8D: // Absolute
+        temp += readAddress();
+        CpuWrite(temp, CpuRegs->A);
+        cycles += tempValue;
+    case 0x81: // (Indirect, X)
+    case 0x91: // (Inderect), Y
+        break;
+    }
+    return 0;
+}
+
+/**
+ * @brief Performs the load y operation.
+ *
+ * @param op
+ * @param low
+ * @param high
+ * @param temp
+ * @return int
+ */
+int LDY(byte op, byte low, byte high, ushort temp)
+{
+    switch (op)
+    {
+    case 0xA0: // Immediate
+        CpuRegs->Y = CpuRead(CpuRegs->PC);
+        CpuRegs->PC++;
+        cycles += tempValue;
+        break;
+    case 0xB4: // Zero page, X
+        temp += CpuRegs->X;
+        cycles += tempValue;
+    case 0xA4: // Zero Page
+        temp += CpuRead(CpuRegs->PC);
+        temp %= byteLimit;
+        CpuRegs->Y = CpuRead(temp);
+        CpuRegs->PC++;
+        cycles += tempValue; // Base cycles added.
+        break;
+    case 0xBC: // Absolute, X
+        temp += CpuRegs->X;
+        cycles += tempValue;
+    case 0xAC: // Absolute
+        temp += readAddress();
+        CpuRegs->Y = CpuRead(temp);
+        cycles += tempValue;
+        break;
+    }
+
+    return 0;
+}
+
+int STY(byte op, byte low, byte high, ushort temp)
+{
+    switch (op)
+    {
+    case 0x94: // Zero page, X
+        temp += CpuRegs->X;
+        cycles += tempValue;
+    case 0x84: // Zero Page
+        temp += CpuRead(CpuRegs->PC);
+        temp %= byteLimit;
+        CpuWrite(temp, CpuRegs->Y);
+        CpuRegs->PC++;
+        cycles += tempValue; // Base cycles added.
+        break;
+    case 0x8c: // Absolute
+        temp = readAddress();
+        CpuWrite(temp, CpuRegs->Y);
+        cycles += tempValue;
+        break;
+    }
+    return 0;
+}
+
+int LDX(byte op, byte low, byte high, ushort temp)
+{
+    switch (op)
+    {
+    case 0xA0: // Immediate
+        CpuRegs->X = CpuRead(CpuRegs->PC);
+        CpuRegs->PC++;
+        cycles += tempValue;
+        break;
+    case 0xB4: // Zero page, X
+        temp += CpuRegs->X;
+        cycles += tempValue;
+    case 0xA4: // Zero Page
+        temp += CpuRead(CpuRegs->PC);
+        temp %= byteLimit;
+        CpuRegs->X = CpuRead(temp);
+        CpuRegs->PC++;
+        cycles += tempValue; // Base cycles added.
+        break;
+    case 0xBC: // Absolute, X
+        temp += CpuRegs->X;
+        cycles += tempValue;
+    case 0xAC: // Absolute
+        temp += readAddress();
+        CpuRegs->X = CpuRead(temp);
+        cycles += tempValue;
+        break;
+    }
+
+    return 0;
+}
+
+int STX(byte op, byte low, byte high, ushort temp)
+{
+    switch (op)
+    {
+    case 0x94: // Zero page, X
+        temp += CpuRegs->X;
+        cycles += tempValue;
+    case 0x84: // Zero Page
+        temp += CpuRead(CpuRegs->PC);
+        temp %= byteLimit;
+        CpuWrite(temp, CpuRegs->X);
+        CpuRegs->PC++;
+        cycles += tempValue; // Base cycles added.
+        break;
+    case 0x8c: // Absolute
+        temp = readAddress();
+        CpuWrite(temp, CpuRegs->X);
+        cycles += tempValue;
+        break;
+    }
     return 0;
 }
