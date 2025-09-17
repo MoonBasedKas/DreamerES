@@ -4,6 +4,9 @@
 #define StackStart (ushort)0x01FF
 #define ROMSize 0x8000
 #define RomHeaderSize 0x10
+#define tempValue 0
+#define PPUPerCycles 3
+#define byteLimit 256
 
 #define RAMSize 0x0800
 #define RAMMirrorOne 0x800
@@ -20,7 +23,6 @@ typedef unsigned short ushort;
 
 enum CpuFlags
 {
-
     Negative = 0b10000000,
     Overflow = 0b01000000,
     Decimal = 0b00001000,
@@ -47,5 +49,12 @@ void Reset(char *loc);
 byte CpuRead(ushort address);
 int CpuWrite(ushort address, byte value);
 int execInstruction();
+
+// Evil global variables.
+byte CpuRom[ROMSize];
+byte CpuRam[RAMSize];
+byte RomHeader[RomHeaderSize];
+struct CpuRegisters *CpuRegs = NULL;
+unsigned int cycles = 0;
 
 #endif
