@@ -1,7 +1,8 @@
 #ifndef CPU_H
 #define CPU_H
 
-#define StackStart (ushort)0x01FF
+#define StackLimit (byte)0xFF
+#define StackStart (ushort)0x0100
 #define ROMSize 0x8000
 #define RomHeaderSize 0x10
 #define tempValue 0
@@ -34,7 +35,7 @@ enum CpuFlags
 struct CpuRegisters
 {
     ushort PC; // Program counter
-    byte SP;   // stack pointer 0x0100 -> 0x01FF
+    byte SP;   // stack pointer 0x00 -> 0xFF
     byte A;    // Accumulator
     // X and Y registers.
     byte X;
@@ -50,6 +51,8 @@ void Reset(char *loc);
 byte CpuRead(ushort address);
 int CpuWrite(ushort address, byte value);
 ushort readAddress();
+void CpuPush(byte value);
+byte CpuPull();
 
 // Instruction specific functions.
 int execInstruction();

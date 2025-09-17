@@ -293,22 +293,28 @@ int execInstruction()
 
     /// @brief PHA - Push A
     case 0x48:
+        CpuPush(CpuRegs->A);
         break;
     /// @brief PLA - Pull A
     case 0x68:
+        CpuRegs->A = CpuPull();
         break;
     /// @brief PHP - Push processor status
     case 0x08:
+        CpuPush(CpuRegs->status);
         break;
     /// @brief PLP - Pull processor status
     case 0x28:
+        CpuRegs->status = CpuPull();
         break;
     /// @brief TXS - Transfer X to stack pointer
     case 0x9A:
+        CpuRegs->SP = CpuRegs->X;
         break;
 
     /// @brief TSX - Transfer stack pointer to X
     case 0xBA:
+        CpuRegs->X;
         break;
     /// @brief NOP - no operation
     case 0xEA:

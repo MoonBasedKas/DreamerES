@@ -10,7 +10,7 @@
 struct CpuRegisters *initCpuReg()
 {
     struct CpuRegisters *new = calloc(0, sizeof(struct CpuRegisters));
-    new->SP = StackStart;
+    new->SP = StackLimit;
     return new;
 }
 
@@ -98,4 +98,36 @@ ushort readAddress()
     byte low = CpuRead(CpuRegs->PC++);
     byte high = CpuRead(CpuRegs->PC);
     return ((ushort)high * 0x100) + (ushort)low;
+}
+
+void CpuPush(byte value)
+{
+    CpuWrite(CpuRegs->SP + StackStart, value);
+    CpuRegs->SP--;
+}
+
+/**
+ * @brief Gets the top value on the stack to copy.
+ *
+ * @return byte
+ */
+byte GetStackTop()
+{
+    return CpuRead(CpuRegs->SP + StackStart + 1);
+}
+
+/**
+ * @brief Replaces the value at the top.
+ *
+ * @param value
+ */
+void ReplaceStackTop(byte value)
+{
+    CpuWrite(CpuRegs->SP + StackStart + 1, value);
+}
+
+byte CpuPull()
+{
+    CpuRegs->SP++;
+    return CpuRead(CpuRegs->SP + StackStart);
 }
